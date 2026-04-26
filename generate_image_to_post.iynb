@@ -1,0 +1,73 @@
+# ================== ONE CLICK PIPELINE ==================
+
+import os, glob
+
+base = "/content/drive/MyDrive/MyAutomation"
+images_folder = f"{base}/images"
+square_folder = f"{base}/square"
+
+os.makedirs(square_folder, exist_ok=True)
+
+print("Step 1: Convert images → 1080x1080")
+
+input_images = glob.glob(f"{images_folder}/*")
+converted = []
+
+for img in input_images:
+    output = f"{square_folder}/" + os.path.basename(img)
+    cmd = f'convert "{img}" -resize 1080x1080^ -gravity center -extent 1080x1080 "{output}"'
+    status = os.system(cmd)
+    if status == 0 and os.path.exists(output):
+        converted.append(img)
+
+for img in converted:
+    os.remove(img)
+
+print("Converted:", len(converted))
+
+# ----------------------------
+
+print("Step 2: Build file list")
+
+images = sorted(glob.glob(f"{square_folder}/*"))
+filelist_path = f"{base}/filelist.txt"
+
+with open(filelist_path, "w") as f:
+    for img in images:
+        f.write(f"file '{img}'\n")
+        f.write("duration 2.8\n")
+    f.write(f"file '{images[-1]}'\n")
+
+# ----------------------------
+
+print("Step 3: Create slideshow")
+
+os.system(f'''
+ffmpeg -y -f concat -safe 0 -i "{filelist_path}" \
+-vf "scale=1080:1080" -c:v libx264 -pix_fmt yuv420p \
+"{base}/slideshow.mp4"
+''')
+
+# delete square images
+if os.path.exists(f"{base}/slideshow.mp4"):
+    for f in os.listdir(square_folder):
+        os.remove(os.path.join(square_folder, f))
+
+# ----------------------------
+
+print("Step 4: Overlay with background")
+
+os.system(f'''
+ffmpeg -y \
+-i "{base}/background.mp4" \
+-i "{base}/slideshow.mp4" \
+-filter_complex "[0:v]scale=1080:1920[bg];[1:v]scale=1080:1080[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2" \
+-c:v libx264 -pix_fmt yuv420p \
+"{base}/final_video.mp4"
+''')
+
+# delete slideshow
+if os.path.exists(f"{base}/final_video.mp4"):
+    os.remove(f"{base}/slideshow.mp4")
+
+print("✅ DONE — final_video.mp4 created")
