@@ -1,3 +1,18 @@
+# ================== SETUP ==================
+!pip install pillow -q
+!apt-get install ffmpeg -y -q
+import os
+import glob
+import subprocess
+from PIL import Image
+
+# ================== PATHS ==================
+base = "/content/drive/MyDrive/MyAutomation"
+images_folder = f"{base}/images"
+square_folder = f"{base}/square"
+
+#os.makedirs(square_folder, exist_ok=True)
+
 # ================== ONE CLICK PIPELINE ==================
 
 import os, glob
