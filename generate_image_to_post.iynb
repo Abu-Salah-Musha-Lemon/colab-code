@@ -6,83 +6,353 @@ import glob
 import subprocess
 from PIL import Image
 
+# ================== SETUP ==================
+!pip install pillow opencv-python-headless -q
+!apt-get install ffmpeg imagemagick -y -q
+
+import os
+import glob
+import subprocess
+import numpy as np
+import cv2
+import shutil
+from PIL import Image
+
+# ================== MOUNT GOOGLE DRIVE ==================
+print("=" * 50)
+print("📂 Mounting Google Drive...")
+from google.colab import drive
+drive.mount('/content/drive', force_remount=False)
+
 # ================== PATHS ==================
-base = "/content/drive/MyDrive/MyAutomation"
+base          = "/content/drive/MyDrive/MyAutomation"
 images_folder = f"{base}/images"
 square_folder = f"{base}/square"
+background    = f"{base}/background.mp4"
+overlay_png   = f"{base}/overlay.png"       # ← put your PNG here
 
-#os.makedirs(square_folder, exist_ok=True)
+# ================== FOLDER & FILE ACCESS CHECK ==================
+print("\n" + "=" * 50)
+print("🔍 Checking folder & file access...")
 
-# ================== ONE CLICK PIPELINE ==================
+errors = []
 
-import os, glob
+if not os.path.exists(base):
+    errors.append(f"❌ Base folder not found     : {base}")
+else:
+    print(f"✅ Base folder found         : {base}")
 
-base = "/content/drive/MyDrive/MyAutomation"
-images_folder = f"{base}/images"
-square_folder = f"{base}/square"
+if not os.path.exists(images_folder):
+    try:
+        os.makedirs(images_folder, exist_ok=True)
+        print(f"📁 Created images folder     : {images_folder}")
+    except Exception as e:
+        errors.append(f"❌ Cannot create images folder: {e}")
+else:
+    print(f"✅ Images folder found        : {images_folder}")
+
+if not os.path.exists(background):
+    errors.append(f"❌ Background video missing  : {background}")
+else:
+    bg_size = os.path.getsize(background)
+    print(f"✅ Background video found     : background.mp4 ({round(bg_size/1024/1024, 2)} MB)")
+
+# ── Check overlay PNG ────────────────────────────────────────────────
+if not os.path.exists(overlay_png):
+    errors.append(f"❌ Overlay PNG missing       : {overlay_png}")
+    errors.append(f"   → Upload your PNG as 'overlay.png' to {base}")
+else:
+    try:
+        with Image.open(overlay_png) as im:
+            ow, oh = im.size
+            mode   = im.mode
+            print(f"✅ Overlay PNG found         : overlay.png ({ow}x{oh}, {mode})")
+            if mode != "RGBA":
+                print(f"   ⚠️  PNG mode is {mode} — transparency may not work correctly")
+                print(f"   ℹ️  For best results use RGBA PNG with transparent background")
+    except Exception as e:
+        errors.append(f"❌ Cannot read overlay.png   : {e}")
+
+try:
+    test_file = f"{base}/.write_test"
+    with open(test_file, "w") as f:
+        f.write("test")
+    os.remove(test_file)
+    print(f"✅ Write permission           : OK")
+except Exception as e:
+    errors.append(f"❌ No write permission        : {e}")
+
+if errors:
+    print("\n🚨 Fix these issues before continuing:")
+    for e in errors:
+        print(f"   {e}")
+    raise SystemExit("❌ Access check failed.")
+
+print("\n✅ All paths verified — starting pipeline...\n")
+
+# ================== USER SETTINGS ==================
+print("=" * 50)
+print("⚙️  USER SETTINGS")
+print("=" * 50)
+
+FPS  = 30
+SIZE = (1080, 1200)
+
+DURATION        = float(input("Per image duration (e.g. 0.5 / 1.0 / 1.5 / 2.0) : "))
+EFFECT_DURATION = float(input("Bounce effect duration (must be <= duration)      : "))
+
+if EFFECT_DURATION > DURATION:
+    EFFECT_DURATION = DURATION
+    print(f"⚠️  Effect duration capped to {DURATION}s")
+
+print(f"\n✅ Duration      : {DURATION}s per image")
+print(f"✅ Effect        : {EFFECT_DURATION}s bounce")
+
+# ================== STEP 1: Check images folder ==================
+print("\n" + "=" * 50)
+print("Step 1: Check images folder")
+
+input_images = [f for f in glob.glob(f"{images_folder}/*") if os.path.isfile(f)]
+
+if len(input_images) == 0:
+    print(f"❌ No images found in: {images_folder}")
+    raise SystemExit("Add images and re-run.")
+
+print(f"✅ Found {len(input_images)} image(s):")
+for f in input_images:
+    print(f"   {os.path.basename(f)}  ({round(os.path.getsize(f)/1024, 1)} KB)")
+
+# ================== STEP 2: Convert to 1080x1080 ==================
+print("\n" + "=" * 50)
+print("Step 2: Convert images → 1080x1080")
 
 os.makedirs(square_folder, exist_ok=True)
+converted      = []
+convert_failed = []
 
-print("Step 1: Convert images → 1080x1080")
+for img_path in input_images:
+    filename = os.path.basename(img_path)
+    output   = f"{square_folder}/{filename}"
 
-input_images = glob.glob(f"{images_folder}/*")
-converted = []
+    try:
+        with Image.open(img_path) as im:
+            w, h = im.size
+            print(f"   {filename} → {w}x{h}", end=" ")
+    except Exception as e:
+        print(f"\n   ⚠️ Cannot read {filename}: {e}")
+        convert_failed.append(img_path)
+        continue
 
-for img in input_images:
-    output = f"{square_folder}/" + os.path.basename(img)
-    cmd = f'convert "{img}" -resize 1080x1080^ -gravity center -extent 1080x1080 "{output}"'
+    if w == 1080 and h == 1200:
+        shutil.copy2(img_path, output)
+        print(f"→ already 1080x1080 ✅")
+        converted.append(img_path)
+        continue
+
+    cmd    = f'convert "{img_path}" -resize 1080x1080^ -gravity center -extent 1080x1080 "{output}"'
     status = os.system(cmd)
+
     if status == 0 and os.path.exists(output):
-        converted.append(img)
+        print(f"→ converted ✅")
+        converted.append(img_path)
+    else:
+        print(f"→ ❌ FAILED")
+        convert_failed.append(img_path)
 
-for img in converted:
-    os.remove(img)
+print(f"\n✅ Converted : {len(converted)}")
+if convert_failed:
+    print(f"❌ Failed    : {len(convert_failed)}")
 
-print("Converted:", len(converted))
+if len(converted) == 0:
+    raise SystemExit("No images converted.")
 
-# ----------------------------
+for img_path in converted:
+    try:
+        os.remove(img_path)
+    except:
+        pass
 
-print("Step 2: Build file list")
+# ================== STEP 3: Verify square folder ==================
+print("\n" + "=" * 50)
+print("Step 3: Verify square folder")
 
-images = sorted(glob.glob(f"{square_folder}/*"))
-filelist_path = f"{base}/filelist.txt"
+square_images = sorted([f for f in glob.glob(f"{square_folder}/*") if os.path.isfile(f)])
 
-with open(filelist_path, "w") as f:
-    for img in images:
-        f.write(f"file '{img}'\n")
-        f.write("duration 2.8\n")
-    f.write(f"file '{images[-1]}'\n")
+if len(square_images) == 0:
+    raise SystemExit("❌ Square folder is empty after conversion.")
 
-# ----------------------------
+print(f"✅ {len(square_images)} image(s) ready")
 
-print("Step 3: Create slideshow")
+# ================== STEP 4: Build slideshow with Swing D ==================
+print("\n" + "=" * 50)
+print("Step 4: Build slideshow with Swing D bounce")
 
-os.system(f'''
-ffmpeg -y -f concat -safe 0 -i "{filelist_path}" \
--vf "scale=1080:1080" -c:v libx264 -pix_fmt yuv420p \
-"{base}/slideshow.mp4"
-''')
+total_frames  = int(round(DURATION * FPS))
+effect_frames = int(round(EFFECT_DURATION * FPS))
+decay         = effect_frames / 4.0
 
-# delete square images
-if os.path.exists(f"{base}/slideshow.mp4"):
-    for f in os.listdir(square_folder):
-        os.remove(os.path.join(square_folder, f))
+output_path = f"{base}/slideshow_raw.mp4"
+fourcc      = cv2.VideoWriter_fourcc(*'mp4v')
+writer      = cv2.VideoWriter(output_path, fourcc, FPS, SIZE)
 
-# ----------------------------
+success_images = []
+failed_images  = []
 
-print("Step 4: Overlay with background")
+for idx, img_path in enumerate(square_images):
+    print(f"  [{idx+1}/{len(square_images)}] {os.path.basename(img_path)}")
 
-os.system(f'''
+    img = cv2.imread(img_path)
+    if img is None:
+        print(f"  ⚠️ Skipping — could not read")
+        failed_images.append(img_path)
+        continue
+
+    img = cv2.resize(img, SIZE)
+    h, w = img.shape[:2]
+
+    for n in range(total_frames):
+        if n < effect_frames:
+            decay_val = np.exp(-n / decay)
+            bounce    = np.cos(n / 8.0) ** 2
+            offset_y  = int(h * decay_val * bounce)
+        else:
+            offset_y  = 0
+
+        M     = np.float32([[1, 0, 0], [0, 1, offset_y]])
+        frame = cv2.warpAffine(img, M, SIZE,
+                               borderMode=cv2.BORDER_CONSTANT,
+                               borderValue=(0, 0, 0))
+        writer.write(frame)
+
+    success_images.append(img_path)
+
+writer.release()
+
+slideshow_path = f"{base}/slideshow.mp4"
+ret = os.system(f'ffmpeg -y -i "{output_path}" -c:v libx264 -pix_fmt yuv420p -r {FPS} "{slideshow_path}"')
+
+if ret == 0 and os.path.exists(slideshow_path):
+    os.remove(output_path)
+    print(f"✅ Slideshow created")
+
+    deleted = 0
+    for img_path in success_images:
+        try:
+            os.remove(img_path)
+            deleted += 1
+        except:
+            pass
+    try:
+        if not os.listdir(square_folder):
+            os.rmdir(square_folder)
+    except:
+        pass
+    print(f"🗑️  Cleared {deleted} image(s) from square folder")
+else:
+    print("❌ Slideshow creation failed — square images kept")
+    raise SystemExit("Fix slideshow error before continuing.")
+
+# ================== STEP 5: Match background to slideshow ==================
+print("\n" + "=" * 50)
+print("Step 5: Match background to slideshow length")
+
+def get_duration(filepath):
+    result = subprocess.run(
+        ["ffprobe", "-v", "error",
+         "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1",
+         filepath],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    return float(result.stdout.strip())
+
+bg_duration        = get_duration(background)
+slideshow_duration = get_duration(slideshow_path)
+final_duration     = min(bg_duration, slideshow_duration)
+
+print(f"Background duration : {bg_duration}s")
+print(f"Slideshow duration  : {slideshow_duration}s")
+print(f"Final duration      : {final_duration}s  ({'trimmed to BG' if slideshow_duration > bg_duration else 'trimmed to slideshow'})")
+
+# ================== STEP 6: Overlay slideshow on background ==================
+print("\n" + "=" * 50)
+print("Step 6: Overlay slideshow on background")
+
+overlaid_path = f"{base}/overlaid.mp4"
+
+ret = os.system(f'''
 ffmpeg -y \
--i "{base}/background.mp4" \
--i "{base}/slideshow.mp4" \
--filter_complex "[0:v]scale=1080:1920[bg];[1:v]scale=1080:1080[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2" \
--c:v libx264 -pix_fmt yuv420p \
-"{base}/final_video.mp4"
+-i "{background}" \
+-i "{slideshow_path}" \
+-filter_complex "
+  [0:v]scale=1080:1920[bg];
+  [1:v]scale=1080:1200[fg];
+  [bg][fg]overlay=(W-w)/2:(H-h)/2
+" \
+-c:v libx264 -preset fast -pix_fmt yuv420p \
+-t {final_duration} \
+"{overlaid_path}"
 ''')
 
-# delete slideshow
-if os.path.exists(f"{base}/final_video.mp4"):
-    os.remove(f"{base}/slideshow.mp4")
+if ret != 0 or not os.path.exists(overlaid_path):
+    raise SystemExit(f"❌ Overlay failed (code {ret})")
 
-print("✅ DONE — final_video.mp4 created")
+os.remove(slideshow_path)
+print(f"✅ Overlay done")
+
+# ================== STEP 7: Burn PNG overlay onto video ==================
+print("\n" + "=" * 50)
+print("Step 7: Burn overlay PNG onto final video")
+
+# ── Position & size settings ─────────────────────────────────────────
+OVERLAY_W = 1080
+OVERLAY_H = 130
+OVERLAY_X = 0
+OVERLAY_Y = 1447
+
+# ── Resize PNG to exact 1080x130 ────────────────────────────────────
+with Image.open(overlay_png) as im:
+    ow, oh = im.size
+    mode   = im.mode
+    print(f"   Original PNG : {ow}x{oh} ({mode})")
+
+resized_png = f"{base}/overlay_resized.png"
+
+# Resize to exactly 1080x180 (stretch to fit, preserve transparency)
+with Image.open(overlay_png) as im:
+    if im.mode != "RGBA":
+        im = im.convert("RGBA")
+    im_resized = im.resize((OVERLAY_W, OVERLAY_H), Image.LANCZOS)
+    im_resized.save(resized_png)
+
+print(f"   Resized PNG  : {OVERLAY_W}x{OVERLAY_H}")
+print(f"   Position     : x={OVERLAY_X}, y={OVERLAY_Y}")
+print(f"   Covers       : y={OVERLAY_Y} → y={OVERLAY_Y + OVERLAY_H} px")
+
+final = f"{base}/final_video.mp4"
+
+ret = os.system(f'''
+ffmpeg -y \
+-i "{overlaid_path}" \
+-i "{resized_png}" \
+-filter_complex "
+  [1:v]format=rgba[png];
+  [0:v][png]overlay={OVERLAY_X}:{OVERLAY_Y}:format=auto
+" \
+-c:v libx264 -preset fast -pix_fmt yuv420p \
+"{final}"
+''')
+
+# ── Cleanup ──────────────────────────────────────────────────────────
+if ret == 0 and os.path.exists(final):
+    os.remove(overlaid_path)
+    os.remove(resized_png)
+    final_size = round(os.path.getsize(final) / 1024 / 1024, 2)
+    print(f"\n{'=' * 50}")
+    print(f"✅ DONE — final_video.mp4 created")
+    print(f"⏱️  Duration  : {final_duration}s")
+    print(f"📦  Size      : {final_size} MB")
+    print(f"📁  Saved to  : {final}")
+else:
+    print(f"❌ Final render failed (code {ret}) — overlaid.mp4 kept for debug")
