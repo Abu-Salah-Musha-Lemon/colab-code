@@ -20,7 +20,7 @@ drive.mount('/content/drive', force_remount=False)
 base          = "/content/drive/MyDrive/MyAutomation"
 images_folder = f"{base}/images"
 square_folder = f"{base}/square"
-background    = f"{base}/background.mp4"   # full 1080x1920 bg video
+background    = f"{base}/fb_reels_background.mp4"   # full 1080x1920 bg video
 marquee_png   = f"{base}/marquee.png"      # scrolling top image
 overlay1_png  = f"{base}/overlay1.png"     # 600x140 centered under marquee
 overlay2_png  = f"{base}/overlay2.png"     # 1080x140 strip at y=1447
@@ -118,14 +118,26 @@ BTN_W         = int(input("Bottom button width  px (e.g. 600)                 : 
 BTN_H         = int(input("Bottom button height px (e.g. 140)                 : "))
 BTN_MARGIN    = int(input("Bottom button margin from bottom px (e.g. 50)      : "))
 
+# ================== AUDIO SETTINGS ==================
+# Add to USER SETTINGS section
+
+audio_path = f"{base}/audio125.mp3"   # supports mp3, aac, wav, m4a
+
+print("\nAudio Settings:")
+print("  1 = Loop audio to match video length")
+print("  2 = Trim audio to match video length")
+print("  3 = No audio")
+AUDIO_MODE = input("Audio mode (1 / 2 / 3)                            : ").strip()
+AUDIO_VOL  = float(input("Audio volume (e.g. 0.5 / 1.0 / 1.5)              : "))
+
 # ── Auto-calculate all positions (everything centered) ──
 MARQUEE_W     = FRAME_W                              # full width
 MARQUEE_X     = 0
 MARQUEE_Y     = MARQUEE_TOP
 
 OV1_X         = (FRAME_W - OV1_W) // 2
-OV1_Y         = MARQUEE_Y + MARQUEE_H               # directly under marquee
-# OV1_Y         = MARQUEE_Y + MARQUEE_H + 57        # directly under marquee
+# OV1_Y         = MARQUEE_Y + MARQUEE_H               # directly under marquee
+OV1_Y         = MARQUEE_Y + MARQUEE_H+57               # directly under marquee
 
 SLIDE_X       = (FRAME_W - SLIDE_W) // 2
 SLIDE_Y       = OV1_Y + OV1_H                       # directly under overlay1
@@ -138,8 +150,8 @@ SIZE          = (effective_w, effective_h)
 OV2_X         = (FRAME_W - OV2_W) // 2
 
 BTN_X         = (FRAME_W - BTN_W) // 2
-BTN_Y         = FRAME_H - BTN_MARGIN - BTN_H
-#BTN_Y         = 1600
+# BTN_Y         = FRAME_H - BTN_MARGIN - BTN_H
+BTN_Y         = 1600
 
 print(f"""
 ┌─────────────────────────────────────────────────────┐
@@ -405,13 +417,52 @@ sl_cap.release()
 out_writer.release()
 print("✅ Composite raw done")
 
-# ================== STEP 8: Encode final ==================
+# ================== STEP 8: Encode final with audio ==================
 print("\n" + "=" * 50)
-print("Step 8: Encode final video H264")
+print("Step 8: Encode final video with audio")
 
 final = f"{base}/final_video.mp4"
-ret   = os.system(
-    f'ffmpeg -y -i "{comp_raw}" -c:v libx264 -preset fast -pix_fmt yuv420p "{final}"')
+
+if AUDIO_MODE == "3" or not os.path.exists(audio_path):
+    # ── No audio ─────────────────────────────────────────────────────
+    if AUDIO_MODE != "3":
+        print(f"⚠️  audio.mp3 not found — encoding without audio")
+    ret = os.system(
+        f'ffmpeg -y -i "{comp_raw}" '
+        f'-c:v libx264 -preset fast -pix_fmt yuv420p '
+        f'"{final}"')
+
+elif AUDIO_MODE == "1":
+    # ── Loop audio to fill video length ──────────────────────────────
+    print(f"🎵 Audio: looping to {final_duration}s  volume={AUDIO_VOL}")
+    ret = os.system(
+        f'ffmpeg -y '
+        f'-i "{comp_raw}" '
+        f'-stream_loop -1 -i "{audio_path}" '
+        f'-filter_complex "[1:a]volume={AUDIO_VOL}[a]" '
+        f'-map 0:v -map "[a]" '
+        f'-c:v libx264 -preset fast -pix_fmt yuv420p '
+        f'-c:a aac -b:a 192k '
+        f'-t {final_duration} '
+        f'"{final}"')
+
+elif AUDIO_MODE == "2":
+    # ── Trim audio to video length ────────────────────────────────────
+    audio_duration = get_duration(audio_path)
+    print(f"🎵 Audio: {audio_duration}s trimmed to {final_duration}s  volume={AUDIO_VOL}")
+    if audio_duration < final_duration:
+        print(f"⚠️  Audio ({audio_duration}s) shorter than video ({final_duration}s)")
+        print(f"   → Audio will end early. Use mode 1 to loop instead.")
+    ret = os.system(
+        f'ffmpeg -y '
+        f'-i "{comp_raw}" '
+        f'-i "{audio_path}" '
+        f'-filter_complex "[1:a]volume={AUDIO_VOL}[a]" '
+        f'-map 0:v -map "[a]" '
+        f'-c:v libx264 -preset fast -pix_fmt yuv420p '
+        f'-c:a aac -b:a 192k '
+        f'-t {final_duration} '
+        f'"{final}"')
 
 if ret == 0 and os.path.exists(final):
     os.remove(comp_raw)
