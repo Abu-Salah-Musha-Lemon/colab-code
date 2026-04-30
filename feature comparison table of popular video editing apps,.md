@@ -138,3 +138,26 @@ Here’s the professional reference sheet:
 
 ---
 
+### **All-in-One Video Editing App Roadmap**
+
+| Phase                              | Feature Category      | Features                                                                           | Notes / Complexity                                          |
+| ---------------------------------- | --------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **Phase 1 – Core Editing**         | Basic Video Editing   | Trim, Split, Cut, Crop, Rotate, Zoom, Reverse, Speed Control                       | Foundation of the editor; should be lightweight and fast    |
+|                                    | Audio Editing         | Volume, Mute, Extract Audio, Simple Effects                                        | Start with basic audio; advanced effects come later         |
+|                                    | Text & Captions       | Add Text, Change Font/Color, Captions                                              | Important for social media users                            |
+|                                    | Filters & Effects     | Basic Filters, Transitions, Simple Animations                                      | Start with 10–20 filters; more can be added later           |
+|                                    | Export                | Resolution, Frame Rate, Quality                                                    | Ensure stable export; foundation for future advanced export |
+| **Phase 2 – Intermediate Editing** | Overlays & Stickers   | Stickers, PIP (Picture-in-Picture), Animated Overlays                              | Engage users with more creative control                     |
+|                                    | Video Effects         | Blend Modes, Opacity, Basic Masking                                                | Adds professional feel                                      |
+|                                    | Crop & Cutout         | Advanced Cropping, Background Cutout                                               | Start simple; AI can enhance later                          |
+|                                    | Multi-track Editing   | Add multiple video/audio layers                                                    | Enables more complex editing                                |
+| **Phase 3 – Advanced Editing**     | AI Features           | Background Removal, Lip Sync, Voice Enhancement, Expression Change, Auto-Subtitles | May require cloud processing or AI SDKs                     |
+|                                    | Motion & Camera       | Motion Tracking, Camera Tracking, Stabilization                                    | High complexity; optional GPU-heavy features                |
+|                                    | Advanced Audio        | Noise Reduction, Beats, Extract Music, AI-generated Audio                          | Requires DSP or AI audio engine                             |
+|                                    | Advanced Effects      | AI Filters, Relighting, 3D Effects                                                 | Adds wow-factor for pros                                    |
+| **Phase 4 – Pro/Export Features**  | Full Export Control   | Bitrate, Optical Flow, Frame Interpolation                                         | For professional quality export                             |
+|                                    | Templates & Presets   | Video Templates, Preset Filters & Animations                                       | Makes editing faster for users                              |
+|                                    | Collaboration & Cloud | Save Projects, Cloud Sync, Share                                                   | Optional but future-proof                                   |
+
+---
+
