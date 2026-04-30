@@ -351,3 +351,26 @@ To ensure **fast rendering, high-quality output, cloud integration**:
 
 ---
 
+### **Video Editing App – Feature-to-Library Blueprint**
+
+| Phase                              | Features                                                                                                     | Recommended Python/Colab Libraries                                                                           | Notes                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| **Phase 1 – Core Editing**         | Trim, Split, Cut, Crop, Rotate, Zoom, Reverse, Speed, Text, Captions, Filters, Export                        | **MoviePy, OpenCV, FFmpeg, Pillow, NumPy**                                                                   | Handles basic editing and visual effects efficiently           |
+|                                    | Audio basic editing                                                                                          | **pydub, librosa**                                                                                           | Trim, merge, volume adjustments                                |
+| **Phase 2 – Intermediate Editing** | Overlays, Stickers, PIP, Multi-track Editing, Masking                                                        | **MoviePy (CompositeVideoClip), OpenCV, Pillow, NumPy**                                                      | Combine multiple clips and images with transparency and layers |
+| **Phase 3 – Advanced Editing**     | AI Background Removal, Lip-sync, Motion/Camera Tracking, AI Filters, Advanced Audio Effects, Noise Reduction | **rembg / U2Net, Wav2Lip, MediaPipe / OpenCV Face Mesh, Torch / TensorFlow / PyTorch, noisereduce, librosa** | AI-heavy features may require cloud or GPU support             |
+|                                    | Auto-subtitles / Transcription                                                                               | **OpenAI Whisper, transformers**                                                                             | Generates captions automatically                               |
+| **Phase 4 – Pro/Export Features**  | Full export control (fps, bitrate, codec), Templates & Presets, Cloud Sync                                   | **FFmpeg-python, OpenCV VideoWriter, Google Drive API, TensorRT / ONNX Runtime**                             | Ensures high-quality output and optional cloud storage         |
+
+---
+
+### **💡 Notes for Implementation**
+
+1. **Phase 1–2 libraries** are lightweight, run fully offline, and perfect for mobile prototyping in Colab.
+2. **Phase 3 libraries** involve AI models; you may need GPU runtime in Colab or cloud inference for speed.
+3. **Phase 4 libraries** handle professional output and scalability; these can integrate with cloud storage.
+4. **NumPy + Pillow + OpenCV** are your core utilities for frame manipulation and filters—they appear in almost every phase.
+
+---
+
+
