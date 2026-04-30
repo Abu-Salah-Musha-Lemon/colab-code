@@ -9,6 +9,9 @@ import numpy as np
 import cv2
 import shutil
 from PIL import Image
+import time
+from google.colab import files as colab_files
+IMAGE_EXT = [".jpg", ".jpeg", ".png", ".bmp", ".webp"]
 
 # ================== MOUNT GOOGLE DRIVE ==================
 print("=" * 50)
@@ -222,8 +225,9 @@ def alpha_composite(base_bgr, overlay_rgba, x, y):
 print("\n" + "=" * 50)
 print("Step 1: Check images folder")
 
-import time
-from google.colab import files as colab_files
+# import time
+# from google.colab import files as colab_files
+
 
 def check_and_upload_images():
     """Check images folder. If empty, open upload dialog and save to folder."""
