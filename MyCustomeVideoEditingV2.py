@@ -20,11 +20,12 @@ drive.mount('/content/drive', force_remount=False)
 base          = "/content/drive/MyDrive/MyAutomation"
 images_folder = f"{base}/images"
 square_folder = f"{base}/square"
-background    = f"{base}/assets/background/background.mp4"   # full 1080x1920 bg video
-marquee_png   = f"{base}/assets/marquee/marquee.png"      # scrolling top image
-overlay1_png  = f"{base}/assets/overlay1/overlay1.png"     # 600x140 centered under marquee
-overlay2_png  = f"{base}/assets/overlay2/overlay2.png"     # 1080x140 strip at y=1447
-bottom_png    = f"{base}/assets/bottom/bottom.png"       # 600x140 button at bottom
+background    = f"{base}/assets/background/background.mp4"      # full 1080x1920 bg video
+marquee_png   = f"{base}/assets/marquee/marquee.png"            # scrolling top image
+overlay1_png  = f"{base}/assets/overlay1/overlay1.png"          # 600x140 centered under marquee
+overlay2_png  = f"{base}/assets/overlay2/overlay2.png"          # 1080x140 strip at y=1447
+bottom_png    = f"{base}/assets/bottom/bottom.png"              # 600x140 button at bottom
+audio_path    = f"{base}/assets/audio/audio125.mp3"             # supports mp3, aac, wav, m4a
 
 # ================== FOLDER & FILE ACCESS CHECK ==================
 print("\n" + "=" * 50)
@@ -121,7 +122,7 @@ BTN_MARGIN    = int(input("Bottom button margin from bottom px (e.g. 50)      : 
 # ================== AUDIO SETTINGS ==================
 # Add to USER SETTINGS section
 
-audio_path = f"{base}/audio125.mp3"   # supports mp3, aac, wav, m4a
+# audio_path = f"{base}/assets/audio/audio125.mp3"   # supports mp3, aac, wav, m4a
 
 print("\nAudio Settings:")
 print("  1 = Loop audio to match video length")
