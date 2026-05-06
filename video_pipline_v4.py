@@ -1,7 +1,7 @@
 # ================== SETUP ==================
 # Run these in a Colab cell before executing this script:
-# !pip install pillow opencv-python-headless -q
-# !apt-get install ffmpeg imagemagick -y -q
+!pip install pillow opencv-python-headless -q
+!apt-get install ffmpeg imagemagick -y -q
 
 import os
 import glob
@@ -307,18 +307,18 @@ def generate_output_path(base_dir, naming_mode):
     """
     if naming_mode == 'timestamp':
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return os.path.join(base_dir, f"final_video_{ts}.mp4")
+        return os.path.join(base_dir, f"asmNews_24_video_{ts}.mp4")
 
     elif naming_mode == 'counter':
         counter = 1
         while True:
-            path = os.path.join(base_dir, f"final_video_{counter:03d}.mp4")
+            path = os.path.join(base_dir, f"asmNews_24_video_{counter:03d}.mp4")
             if not os.path.exists(path):
                 return path
             counter += 1
 
     else:  # overwrite
-        return os.path.join(base_dir, "final_video.mp4")
+        return os.path.join(base_dir, "asmNews_24_video.mp4")
 
 
 def save_settings_log(settings, final_video, final_duration, logs_folder):
@@ -329,7 +329,7 @@ def save_settings_log(settings, final_video, final_duration, logs_folder):
 
     log_data = {
         "rendered_at":    datetime.now().isoformat(),
-        "final_video":    final_video,
+        "asmNews_24_video":    final_video,
         "final_duration": final_duration,
         "settings": {
             k: v for k, v in settings.items()
