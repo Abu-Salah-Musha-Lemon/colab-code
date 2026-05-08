@@ -287,16 +287,4 @@ Built using Python automation + FFmpeg video processing engine.
 
 This project is open-source for learning and personal use.
 
-```
-
 ---
-
-# 🚀 If you want next upgrade
-
-I can also help you:
-- turn this into a **real GitHub production project**
-- add **Streamlit UI (video editor web app)**
-- or convert it into a **CapCut-style app system**
-
-Just tell me 👍
-```
