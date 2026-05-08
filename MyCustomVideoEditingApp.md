@@ -61,7 +61,8 @@ Final Encoder (FFmpeg H.264)
 ↓
 OUTPUT VIDEO (MP4)
 
-```id="arch1"
+```
+id="arch1"
 
 ---
 
@@ -100,7 +101,8 @@ MyVideoEditor/
 ├── utils.py               # Helper functions
 └── README.md
 
-```id="structure1"
+```
+id="structure1"
 
 ---
 
@@ -155,7 +157,8 @@ frame += slideshow frame
 frame += overlay2
 frame += button
 
-````id="render1"
+````
+id="render1"
 
 ---
 
