@@ -1,8 +1,3 @@
-Here is a **complete, polished GitHub README.md file** for your project, including **description, architecture, setup, usage, features, and tutorial links** all in one place.
-
----
-
-```md
 ## 🎬 My Custom Video Editing App
 
 A powerful **automated video editing system** built using Python, OpenCV, and FFmpeg.  
